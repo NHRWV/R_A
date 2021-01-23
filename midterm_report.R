@@ -16,10 +16,10 @@ library(networkD3)
 
 
 
-CONSUMER_SECRET <- "E8u5PZvaNvCNXIi34yEE8Efs8AEz2TxJbvyjpjWi2OpE3HENDQ"
-CONSUMER_KEY <- "hvHT3aR6Reugq4OMSEUG0sums"
-ACCESS_SECRET <- "BbKb4BFRfzyVppA380bh5FHxEjgV2s0PefdNy7Avthmsy"
-ACCESS_TOKEN <- "701807611465740288-g0Dp8IPrCv8VTEJfKRStR1dGHONeoxN"
+CONSUMER_SECRET <- "******"
+CONSUMER_KEY <- "******"
+ACCESS_SECRET <- "******"
+ACCESS_TOKEN <- "******"
 
 setup_twitter_oauth(consumer_key = CONSUMER_KEY,
                     consumer_secret = CONSUMER_SECRET,
