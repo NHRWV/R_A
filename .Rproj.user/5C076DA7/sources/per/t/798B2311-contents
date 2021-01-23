@@ -1,0 +1,26 @@
+---
+title: "HW2_201521466_김남현"
+author: "HW2_201521466_김남현"
+date: '2019 9 20 '
+output: html_document
+---
+
+### Package : dplyr
+
+## 설명 
+
+dplyr 패키지는 테이블 형태의 데이터를 다양한 방법으로 조작할 수 있는 기능을 가지고 있다. 분석을 하기에 앞서 데이터에서 필요한 내용을 추출하고, 적합한 형태를 만드는 데에 있어 특화된 패키지라고 볼 수 있다. 
+
+## 대표 함수 및 설명 
+
+패키지를 설명하기 위한 데이터로 타이타닉호의 데이터를 가져왔다. 
+```{r}
+data_sample<-read.csv("titanic.csv", stringsAsFactors = F, header = T)
+
+head(data_sample)
+str(data_sample)
+
+```
+
+# select 함수 
+

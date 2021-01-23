@@ -1,0 +1,54 @@
+---
+title: "HW5_201521466_김남현"
+author: "HW5_201521466_김남현"
+date: '2019 10 14 '
+output: html_document
+---
+### H0 : 구글플레이스토어의 GAME 카테고리와 FAMILY 카테고리 간에 Rating의 차이가 없을 것이다.
+
+## 데이터 전처리
+```{r}
+library(dplyr)
+
+url <- read.csv("googleplaystore.csv", header = T, stringsAsFactors = F, 
+                na.strings ="NaN")
+str(url)
+
+# Android.Ver 칼럼이 NULL로 되어 있는 열에 대해서 값들을 하나씩 다음열로 밀어준다.
+# 칼럼에 맞게 데이터들이 제자리를 찾아간다.
+for(i in which(url$Android.Ver == "NULL")){
+  for(j in 2:12){
+    url[i,j+1] = url[i,j]
+  }
+}
+
+# 밀려났던 행의 Category 칼럼의 값이 비어있다.
+# App 칼럼의 값이 GAME 혹은 FAMILY로 끝나면 해당 행의 Category 칼럼의 값을 GAME 또는 FAMILY로 변경한다.
+for(m in grep("GAME$", url$App)){
+  url[m,2] = "GAME"
+}
+for(n in grep("FAMILY$", url$App)){
+  url[n,2] = "FAMILY"
+}
+
+# Category가 GAME 또는 FAMILY인 행만 추려서 새로운 데이터프레임을 생성한다.
+gps <- url %>% filter(Category == "GAME" | Category == "FAMILY")
+
+str(gps)
+
+# Rating 칼럼의 값들의 데이터 형식을 바꾸어 준다.
+gps$Rating <- as.numeric(gps$Rating)
+```
+
+## 등분산 검정
+```{r}
+var.test(Rating ~ Category, data = gps)
+```
+  F 값 1.9333이 신뢰구간인 1.7361에서 2.1498 사이에 있는 것을 확인할 수 있다. 값은 정상적으로 나왔으나 p-value가 0.05의 신뢰수준보다 지나치게 낮게 나왔다. 따라서 분산이 서로 다르다는 결론을 내릴 수 있다. 
+  
+## t 검정
+```{r}
+# 분산이 서로 다르다는 전제 하에 검정.
+t.test(Rating ~ Category, var.equal = F, data = gps)
+```
+  t값이 신뢰구간에서 벗어나 있다. 뿐만 아니라 p-value값이 신뢰수준보다 매우 낮게 나왔다. 따라서 카테고리에 따른 레이팅의 차이가 분명 존재함을 암시한다.

@@ -1,0 +1,41 @@
+---
+title: "HW6_201521466_김남현"
+author: "HW6_201521466_김남현"
+date: '2019 11 1 '
+output: html_document
+---
+```{r}
+inov_idx <- read.csv("Analysis_2019.csv", header = T, stringsAsFactors = F)
+cul_idx <- read.csv("cato_2017_hfi_by_year_summary.csv", header = T, stringsAsFactors = F)
+# csv 파일을 불러온다.
+```
+  inov_idx는 국가의 첨단산업부문에 대한 투자도를 나타내는 혁신점수로서 2019년 자료이다. cul_idx는 국가의 개인 자유도, 경제적 자유도, 해당 국가의 전체적인 자유도를 보여주는 2015년 자료이다. 해당 자료들은 캐글에서 가져왔다.
+
+```{r}
+cul_idx <- cul_idx[cul_idx$Year == 2015,]
+  # cul_idx의 데이터에 여러 연도가 섞여있으므로 가장 최근인 2015년 자료만 추려낸다.
+
+paka <- inner_join(inov_idx, cul_idx, "Countries")  
+# 두 데이터를 Countries 칼럼을 기준으로 inner_join한다. 이로써 두 자료에 공통적으로 나타나는 국가만 선별할 수 있다.
+
+cor.var <- paka[c("Score", "PERSONAL_FREEDOM", "ECONOMIC_FREEDOM", "HUMAN_FREEDOM")]  
+# join을 통해서 하나로 합친 데이터에서 상관관계를 분석한 칼럼들을 추려낸다.
+
+sjt.corr(cor.var,
+         var.labels = c("혁신점수", "개인의 자유", "경제적 자유", "자유"),
+         corr.method = "pearson", na.deletion = "pairwise",
+         p.numeric = T, triangle = "lower", encoding = "EUC-KR")  
+
+# sjPlot 패키지를 통해 행렬차트를 그려본다.
+# 결측값 제거, 피어슨 방법 사용, 상관계수에 따른 유의도 표시, 삼각형 행렬 사용.
+```
+
+```{r}
+cor.var <- cor(cor.var)  
+# 이번에는 corrplot 패키지로 상관관계를 시각화 해보려고 한다. 그 전에 cor 함수로 상관관계 분석을 위한 준비를 한다.
+corrplot(cor.var, method = "circle")  
+# 동그라미 형태로 표시되도록 상관관계 시각화를 표현한다.
+```
+
+시각화 시도를 두 번 했는데 두 번 모두 양의 상관관계를 보이는 것으로 나타난다. 인과관계는 모르지만 국가의 혁신도와 그 국가의 자유도는 비례한다는 사실을 알 수 있다. 
+

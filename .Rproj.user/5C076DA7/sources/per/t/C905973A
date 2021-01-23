@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1569462997346.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "4145199377",
+    "id" : "C905973A",
+    "lastKnownWriteTime" : 1569465931,
+    "last_content_update" : 1569465931947,
+    "path" : "C:/Users/Namlister/Desktop/Assignments/R_A/Ch2.Code/Ch2Part2.R",
+    "project_path" : "Ch2.Code/Ch2Part2.R",
+    "properties" : {
+        "cursorPosition" : "155,0",
+        "scrollLine" : "145"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

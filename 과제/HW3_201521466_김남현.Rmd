@@ -1,0 +1,54 @@
+---
+title: "HW3_201521466_김남현"
+author: "HW3_201521466_김남현"
+date: '2019 9 22 '
+output: html_document
+---
+```{r}
+test<-read.csv("04-1 중2 패널 1차년도 데이터(SPSS).csv",header=TRUE, sep=",") # 예제데이터를 불러온다. 
+
+names(test)[1] <- "id" # 데이터프레임의 첫 번째 열 이름을 "id"로 설정.
+```
+### 빈도표
+```{r}
+select_variables <- c("id", "sexw1", "scharew1", "areaw1", "q2w1", "q18a1w1", "q18a2w1", "q18a3w1", "q33a01w1", "q33a02w1", "q33a03w1", "q33a04w1", "q33a05w1", "q33a06w1", "q33a07w1", "q33a08w1", "q33a09w1", "q33a10w1", "q33a12w1", "q33a13w1", "q33a14w1", "q33a15w1", "q34a1w1", "q34a2w1", "q34a3w1", "q34a4w1", "q34a5w1", "q34a6w1", "q37a01w1", "q37a02w1", "q37a03w1", "q37a04w1", "q48a01w1", "q48a02w1", "q48a03w1", "q48a04w1", "q48a05w1", "q48a06w1", "q48b1w1", "q48b2w1", "q48b3w1", "q48c1w1", "q48c2w1", "q48c3w1", "q48c4w1", "q48c5w1", "q48c6w1", "q50w1") # 변수 벡터를 만들어 준다. 
+
+
+test1 <- test[select_variables] # test 데이터프레임에서 변수 벡터에 있는 열만 추출한다.
+spssdata <- test1[which(test1$scharew1 >= 100 & test1$scharew1 < 200),]
+# 서울 소재지에 있는 100 이상 200 미만의 데이터만 추출한다.
+
+table(spssdata$q50w1) # 해당 조건을 충족하는 데이터 빈도표를 출력한다.
+```
+
+### 기술통계량 
+```{r}
+summary(spssdata$q50w1) # summary 함수를 이용한다.
+```
+
+### 바 차트
+```{r}
+library(RColorBrewer)
+library(ggplot2)
+pal1 <- brewer.pal(5,"Set2")
+# ggplot2 패키지를 사용해서 차트를 그려보았다.
+ggplot(data = spssdata, aes(spssdata$q50w1)) + geom_bar(fill = pal1) + labs(x="응답 번호", y="응답 횟수")
+
+
+```
+
+### 파이 차트 
+```{r}
+caption <- c("전혀 만족하지 못한다", "만족하지 못하는 편이다", "보통이다",
+"만족하는 편이다", "매우 만족한다") #응답결과 벡터 생성.
+
+pcaption <- round(100*prop.table(table(spssdata$q50w1)), 1) # 백분율을 나타내기 위해 prop.table 함수 사용.
+
+a <- paste(caption, pcaption)
+
+a <- paste0(a,"%") # 퍼센트 기호를 문자에 합쳐준다.
+
+pie(pcaption, labels = a, col = rainbow(5), main ="학생이 느끼는 삶의 만족도", 
+    init.angle = 0, radius = 1.0)
+```
+

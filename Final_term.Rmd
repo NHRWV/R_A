@@ -1,0 +1,100 @@
+---
+title: "Untitled"
+author: "KimSagon"
+date: '2019 12 21 '
+output: html_document
+---
+
+# 소셜미디어 검색빈도수를 통한 대학평가순위 상관성 분석
+
+**목차**  
+- **주제 변경**  
+- **주제 선정 이유**  
+- **데이터 수집**  
+- **상관성 분석**  
+- **회귀 분석**  
+ 
+## 주제 선정 이유
+매년 중앙일보에서는 우리나라 **대학순위**를 발표한다. 다양한 평가 지표를 사용해서 종합순위를 측정하기 때문에 재학생이나 수험생 입장에서는 이해할 수 없는 결과도 있다. 이번 과제를 통해 중앙일보의 **소셜미디어에서의 대학 언급빈도와 대학 종합순위 간의 상관관계**를 알아보고, 회귀분석을 통해 해당 연구의 검증력에 대해서도 분석해 보고자 한다. 
+
+먼저 소셜미디어 중 하나인 **인스타그램에서 해시태그를 활용하여 대학 언급빈도를 측정**하고자 하였다. 인스타그램에 대학이름으로 검색했을 때 게시물을 대학마다 최소 1000개씩은 크롤링하여서 포스팅 되는 날짜를 기반으로 특정 대학이 얼마나 자주 포스팅 되는지 보려고 했다. 하지만 서울대와 같은 대학의 경우 #서울대로 하루에 올라오는 게시물이 많아서 유의미한 결과를 얻기 위한 게시물 개수가 더 많아야 할 것으로 판단되었다. 대안으로 각 대학별로 100개 정도 해시태그 검색을 하여서 게시물 100개를 채우는 데 걸리는 시간을 기준으로 등급을 매겨서 명목형 자료형으로 만드는 시도를 했다. 하지만 어느 방법을 사용하든 대학이름을 사용한 해시태그를 광고게시물에서 사용하는 경향이 많아서 우리가 바라던 순수한 결과물이라고 보기는 어려웠다. **따라서 인스타그램을 활용한 데이터는 제외하기로 결정하였다.**
+
+대학순위와 같이 대학 관련 이야기가 활발히 일어나는 커뮤니티 사이트를 찾아본 결과 **오르비와 수만휘**라는 사이트였다. 이에 오르비와 수만휘의 2019년에 올라온 게시물 중에서 각 대학을 언급하는 횟수를 측정해보기로 했다. 오르비의 경우 검색했을 시에 한 페이지 당 게시물 20개씩으로 최근 80페이지밖에 보여주는 한계를 보였기에 제외했다. 수만휘의 경우 네이버 카페였기 때문에 상세한 검색조건을 설정할 수 있어서 대학별로 2019년에 올라온 게시물 수를 알아내기 편리했다.
+
+## 데이터 수집
+
+
+$$Y=a+bX$$
+X= 소셜미디어 게시글 빈도  
+Y= 중앙일보 대학평가 점수  
+
+## 회귀 분석
+
+![구글 트렌드 분석](C:/Users/dnems/Desktop/3학년 2학기/R통계/googletrend.png)
+
+![구글 트렌드 분석](C:/Users/dnems/Desktop/3학년 2학기/R통계/rank.png)
+
+![구글 트렌드 분석](C:/Users/dnems/Desktop/3학년 2학기/R통계/SMH.png)
+
+![TOP 30평가 대학 구글 트렌드 추이](C:/Users/dnems/Desktop/3학년 2학기/R통계/multi.png)
+
+
+![TOP 30평가 대학 구글 트렌드 추이](C:/Users/dnems/Desktop/3학년 2학기/R통계/googletrend_csv.png)
+
+```{r}
+getwd()
+data<-read.csv("data.csv",stringsAsFactors = FALSE)
+View(data)
+
+regression <-lm(score ~ SMH, data=data)
+summary(regression)
+```
+ - **F-statistic의 p-value값이 0.0141**로 유의수준인 0.05보다 작기 때문에 해당 회귀식이 통계적으로 유의미하다고 판단됨.
+그러나, 회귀식의 설명력을 나타내는 **Adjusted R-squared의 값이 0.18**로 현저히 낮기 때문에 수만휘(SMH)의 대학 게시글 빈도수와 대학 순위 간의 상관관계가 있다고 설명하기 어려움.
+
+
+```{r}
+library(ggplot2)
+plot_03_09 <- ggplot(data, aes(trend_0303, trend_0901, label=univ))
+plot_03_09 + geom_text()
+
+plot_09_11 <- ggplot(data, aes(trend_0901, trend_1117, label=univ))
+plot_09_11 + geom_text()
+
+plot_03_11 <- ggplot(data, aes(trend_0303, trend_1117, label=univ))
+plot_03_11 + geom_text()
+```
+ - 시각화 결과 예상과 달리 구글 트렌드에 대학 검색빈도에 대한 순위가 trend_0303(고3 시작일), trend_0901(수시 접수), trend_1117(수능일)에 
+
+```{r}
+regression_total <-lm(score ~ trend_total, data=data)
+summary(regression_total)
+
+regression_0303 <-lm(score ~ trend_0303, data=data)
+summary(regression_0303)
+
+regression_0901 <-lm(score ~ trend_0901, data=data)
+summary(regression_0901)
+
+regression_1117 <-lm(score ~ trend_1117, data=data)
+summary(regression_1117)
+
+```
+
+```{r}
+trend_total_plot <- ggplot(data, aes(trend_total, score, label=univ))
+trend_total_plot + geom_text(hjust=-.1,check_overlap = TRUE)
+
+trend_0303_plot <- ggplot(data, aes(trend_0303, score, label=univ))
+trend_0303_plot + geom_text(hjust=-.1,check_overlap = TRUE)
+
+trend_0901_plot <- ggplot(data, aes(trend_0901, score, label=univ))
+trend_0901_plot + geom_text(hjust=-.1,check_overlap = TRUE)
+
+trend_1117_plot <- ggplot(data, aes(trend_1117, score, label=univ))
+trend_1117_plot + geom_text(hjust=-.1,check_overlap = TRUE)
+
+SMH_plot <- ggplot(data, aes(SMH, score, label=univ))
+SMH_plot + geom_text(hjust=-.1,check_overlap = TRUE)
+
+```

@@ -1,0 +1,164 @@
+############################################################################
+# Chapter      :   2 
+# Description  :   Connect to Twitter app and perform trend analysis using
+#                  different visualizations
+# Note         :   Your results may be different than the ones discussed 
+#                  in the chapter due to dyanmic nature of Twitter
+############################################################################
+
+#install.packages("tm")
+library(tm)
+#install.packages("ggmap")
+library(ggmap)
+library(ggplot2)
+library(twitteR)
+#ibrary(stringr)
+#install.packages("wordcloud")
+library(wordcloud)
+#install.packages("lubridate")
+library(lubridate)
+library(data.table)
+
+
+# set the credentials (just in case)
+CONSUMER_SECRET <- "E8u5PZvaNvCNXIi34yEE8Efs8AEz2TxJbvyjpjWi2OpE3HENDQ"
+CONSUMER_KEY <- "hvHT3aR6Reugq4OMSEUG0sums"
+ACCESS_SECRET <- "BbKb4BFRfzyVppA380bh5FHxEjgV2s0PefdNy7Avthmsy"
+ACCESS_TOKEN <- "701807611465740288-g0Dp8IPrCv8VTEJfKRStR1dGHONeoxN"
+
+
+############################################################################
+#       Utility Functions
+############################################################################
+
+# optional
+#library(httr)
+# Set proxy options
+# set_config( use_proxy(url  = "http://proxy-chain.intel.com", port = 911));
+
+# plot by source
+# encode tweet source as iPhone, iPad, Android or Web
+# gsub (global substitute): Replace 1st arg with 2nd arg in 3rd arg string
+encodeSource <- function(x) {
+  if(grepl(">Twitter for iPhone</a>", x)){
+    "iphone"
+  }else if(grepl(">Twitter for iPad</a>", x)){
+    "ipad"
+  }else if(grepl(">Twitter for Android</a>", x)){
+    "android"
+  } else if(grepl(">Twitter Web Client</a>", x)){
+    "Web"
+  } else if(grepl(">Twitter for Windows Phone</a>", x)){
+    "windows phone"
+  }else if(grepl(">dlvr.it</a>", x)){
+    "dlvr.it"
+  }else if(grepl(">IFTTT</a>", x)){
+    "ifttt"
+  }else if(grepl(">EarthquakeTrack.com</a>", x)){
+    "earthquaketrack"
+  }else if(grepl(">Did You Feel It</a>", x)){
+    "did_you_feel_it"
+  }else if(grepl(">Earthquake Mobile</a>", x)){
+    "earthquake_mobile"
+  }else if(grepl(">Facebook</a>", x)){  #This looks unreliable...
+    "facebook"
+  }else {
+    "others"
+  }
+}
+
+
+############################################################################
+#             Trend Analysis
+############################################################################
+
+# connect to twitter app
+setup_twitter_oauth(consumer_key = CONSUMER_KEY,
+                    consumer_secret = CONSUMER_SECRET,
+                    access_token = ACCESS_TOKEN,
+                    access_secret = ACCESS_SECRET)
+#Access token and secret should be provided due to API change in July 2018.
+
+# extract tweets based on a search term
+searchTerm <- "#earthquake"
+trendingTweets = searchTwitter(searchTerm,n=1000,lang = "en")  
+#even with lang option, mapCountry gives an error... due to emoji?
+
+class(trendingTweets)
+head(trendingTweets)
+str(trendingTweets[[1]])
+
+# perform a quick cleanup/transformation
+trendingTweets.df = twListToDF(trendingTweets)
+View(trendingTweets.df)
+class(trendingTweets.df)
+names(trendingTweets.df)
+head(trendingTweets.df)
+head(trendingTweets.df$text)
+#trendingTweets.df$text <- sapply(trendingTweets.df$text,function(x) iconv(x,to='UTF-8')) #Removes some (unicode?) values in text field
+trendingTweets.df$text <- sapply(trendingTweets.df$text,function(x) iconv(enc2utf8(x), sub="byte"))  #this works fine!!
+head(trendingTweets.df$text)
+head(trendingTweets.df$created)
+class(trendingTweets.df$created)
+save(trendingTweets.df, file = "trendingTweets20190811.Rda")
+
+# see how many missing values are there on a per column basis
+sapply(trendingTweets.df, function(x) sum(is.na(x)))
+# text: The text of the status
+# screenName: Screen name of the user who posted this status
+# id: ID of this status
+# replyToSN: Screen name of the user this is in reply to
+# replyToUID: ID of the user this was in reply to
+# statusSource: Source user agent for this tweet
+# created: When this status was created
+# truncated: Whether this status was truncated
+# favorited: Whether this status has been favorited (This belongs to the current retweet)
+# retweeted: TRUE if this status has been retweeted (vs. isRetweet: TRUE if this status is retweet of the original tweet)
+# retweetCount: The number of times this status has been retweeted (This belongs to the original tweet)
+# longitude
+# latitude
+
+
+############################################################################
+
+# plot on tweets by time
+ggplot(data = trendingTweets.df, aes(x = created)) +
+  geom_histogram(aes(fill = ..count..)) +
+  theme(legend.position = "none") +
+  xlab("Time") + ylab("Number of tweets") + 
+  scale_fill_gradient(low = "midnightblue", high = "aquamarine4")
+
+
+############################################################################
+
+# plot tweets by source system (android, iphone, web, etc)
+trendingTweets.df$tweetSource = sapply(trendingTweets.df$statusSource, encodeSource)
+
+
+ggplot(trendingTweets.df[trendingTweets.df$tweetSource != 'others',], aes(tweetSource)) +
+  geom_bar(fill = "aquamarine4") + 
+  theme(legend.position="none", 
+        axis.title.x = element_blank(), 
+        axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ylab("Number of tweets") + 
+  ggtitle("Tweets by Source") 
+
+
+
+############################################################################
+
+# accounts which tweet about quakes
+
+namesCorpus <- Corpus(VectorSource(trendingTweets.df$screenName))  #using ScreenName
+class(trendingTweets.df$screenName)
+class(VectorSource(trendingTweets.df$screenName))
+str(namesCorpus)
+class(namesCorpus)
+
+pal <- brewer.pal(9,"YlGnBu")
+pal <- pal[-(1:4)]
+
+set.seed(42)
+par(mar = c(0,0,0,0), mfrow = c(1,1)) # 이거 모르겠네..마진 설정임.
+wordcloud(words = namesCorpus, scale=c(3,0.5), max.words=100, random.order=FALSE, 
+          rot.per=0.10, use.r.layout=TRUE, colors=pal)

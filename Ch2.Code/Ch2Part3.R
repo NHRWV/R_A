@@ -1,0 +1,137 @@
+############################################################################
+# Chapter      :   2 
+# Description  :   Connect to Twitter app and perform sentiment analysis 
+# Note         :   Your results may be different than the ones discussed 
+#                  in the chapter due to dyanmic nature of Twitter
+############################################################################
+
+search()
+library(twitteR)
+# library(data.table)
+library(tm)
+library(ggplot2)
+library(stringr)
+#install.packages("syuzhet")
+library(syuzhet)
+library(wordcloud)
+library(RColorBrewer)
+
+# set the credentials
+CONSUMER_SECRET <- "E8u5PZvaNvCNXIi34yEE8Efs8AEz2TxJbvyjpjWi2OpE3HENDQ"
+CONSUMER_KEY <- "hvHT3aR6Reugq4OMSEUG0sums"
+ACCESS_SECRET <- "BbKb4BFRfzyVppA380bh5FHxEjgV2s0PefdNy7Avthmsy"
+ACCESS_TOKEN <- "701807611465740288-g0Dp8IPrCv8VTEJfKRStR1dGHONeoxN"
+
+############################################################################
+#       Utility Functions
+############################################################################
+
+# optional
+# library(httr)
+# Set proxy options
+#set_config( use_proxy( url  = "http://proxy-chain.intel.com", port = 911));
+# set_config( use_proxy( url  = "http://189.50.4.170", port = 8080));
+
+
+#extract timeline tweets
+extractTimelineTweets <- function(username,tweetCount){
+  # timeline tweets
+  twitterUser <- getUser(username)
+  tweets = userTimeline(twitterUser,n=tweetCount)
+  tweets.df = twListToDF(tweets)
+  #tweets.df$text <- sapply(tweets.df$text,function(x) iconv(x,to='UTF-8'))  #commented out due to missing text
+  tweets.df$text <- sapply(tweets.df$text,function(x) iconv(enc2utf8(x), sub="byte"))
+  
+  return(tweets.df)
+}
+
+
+encodeSentiment <- function(x) {
+  if(x <= -0.5){
+    "1) very negative"
+  }else if(x > -0.5 & x < 0){
+    "2) negative"
+  }else if(x > 0 & x < 0.5){
+    "4) positive"
+  }else if(x >= 0.5){
+    "5) very positive"
+  }else {
+    "3) neutral"
+  }
+}
+
+
+############################################################################
+#             Sentiment Analysis
+############################################################################
+
+# connect to twitter app
+setup_twitter_oauth(consumer_key = CONSUMER_KEY,
+                    consumer_secret = CONSUMER_SECRET,
+                    access_token = ACCESS_TOKEN,
+                    access_secret = ACCESS_SECRET)
+#Access token and secret should be provided due to API change in July 2018.
+
+tweetsDF <- extractTimelineTweets("realDonaldTrump",3200)  #POTUS doesn't work
+#View(tweetsDF)
+#tweetsDF$text <- sapply(tweetsDF$text,function(x) iconv(x,to='UTF-8')) #This makes dataframe lose some values in text field
+
+nohandles <- str_replace_all(tweetsDF$text, "@\\w+", "") # @뒤의 문자..그러니까 계정명을 제거.
+# 트위터에서 언급하는 계정을 삭제하는 것이다.
+wordCorpus <- Corpus(VectorSource(nohandles))
+wordCorpus[[1]]$content
+wordCorpus <- tm_map(wordCorpus, removePunctuation)
+wordCorpus[[1]]$content
+wordCorpus <- tm_map(wordCorpus, content_transformer(tolower))
+wordCorpus[[1]]$content
+wordCorpus <- tm_map(wordCorpus, removeWords, stopwords("english")) # 불용어처리 
+wordCorpus[[1]]$content
+wordCorpus <- tm_map(wordCorpus, removeWords, c("amp"))  #manual assignment
+wordCorpus[[1]]$content
+wordCorpus <- tm_map(wordCorpus, stripWhitespace) # 긴 공백들 전부 빈칸 하나로 바꾸기
+wordCorpus[[1]]$content
+str(wordCorpus)
+
+pal <- brewer.pal(9,"YlGnBu")
+pal <- pal[-(1:4)]
+set.seed(123)
+wordcloud(words = wordCorpus, scale=c(5,0.1), max.words=1000, random.order=FALSE, 
+          rot.per=0.35, use.r.layout=FALSE, colors=pal)
+
+
+tweetSentiments <- get_sentiment(tweetsDF$text,method = "syuzhet")
+tweets <- cbind(tweetsDF, tweetSentiments)
+tweets$sentiment <- sapply(tweets$tweetSentiments,encodeSentiment)
+head(tweets, n = 1)
+names(tweets)
+qplot(tweets$tweetSentiments) + theme(legend.position="none")+
+  xlab("Sentiment Score") +
+  ylab("Number of tweets") + 
+  ggtitle("Tweets by Sentiment Score") 
+
+ggplot(tweets, aes(sentiment)) +
+  geom_bar(fill = "aquamarine4") + 
+  theme(legend.position="none", axis.title.x = element_blank()) +
+  ylab("Number of tweets") + 
+  ggtitle("Tweets by Sentiment") 
+
+
+
+# NRC Sample (various emotions such as anger, fear, joy, ...)
+tweetSentiments <- get_nrc_sentiment(tweetsDF$text)
+head(tweetSentiments)
+
+tweets <- cbind(tweetsDF, tweetSentiments)
+tweets[c(1:5),c(1, 17:26)]
+
+sentimentTotals <- data.frame(colSums(tweets[,c(17:26)]))
+
+names(sentimentTotals) <- "count"
+sentimentTotals <- cbind("sentiment" = rownames(sentimentTotals), sentimentTotals)
+rownames(sentimentTotals) <- NULL
+sentimentTotals
+
+ggplot(data = sentimentTotals, aes(x = sentiment, y = count)) +
+  geom_bar(aes(fill = sentiment), stat = "identity") +
+  theme(legend.position = "none") +
+  xlab("Sentiment") + ylab("Total Count") + ggtitle("Total Sentiment Score for All Tweets")

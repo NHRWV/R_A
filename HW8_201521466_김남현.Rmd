@@ -1,0 +1,109 @@
+---
+title: "HW8_201521466_김남현"
+author: "HW8_201521466_김남현"
+date: '2019 12 2 '
+output: html_document
+---
+#### 준비과정
+  - EDA
+  - 독립변수에 따라 데이터 나누기
+
+#### 예측모델 생성
+  - 훈련데이터와 검증데이터 분류
+  - 예측모델 학습
+
+#### 성능평가 
+  - 성능평가 
+  - 각 독립변수 병합 후 예측모델 생성 및 평가 
+  
+  
+  
+
+### 준비과정
+#### EDA
+```{r}
+library(tidyverse)
+library(e1071)
+library(DataExplorer)
+library(caret)
+
+df <- read.csv("통신회사고객이탈예측.csv", header = T, stringsAsFactors = T)
+df$customerID <- as.character(df$customerID)
+
+# EDA를 실시하여 데이터에 대한 정보를 알 수 있다.  
+plot_intro(df)
+```
+결측값이 없다는 걸 확인했다.  
+
+#### 독립변수에 따라 데이터 나누기  
+```{r}
+# 고객이 이용 중인 서비스, 고객계정 관련 정보, 고객에 관한 인구통계학적 정보에 따라 변수들을 분류하고, 그에 따라 데이터를 나눈다.  
+df_s <- df[, c(7:15, 21)]
+df_a <- df[, c(6, 16:21)]
+df_p <- df[, c(2:5, 21)]
+df <- df[,-1]
+```
+
+
+### 예측모델 생성 
+#### 훈련데이터와 검증데이터 분류  
+```{r}
+# 나누어진 데이터를 caret패키지를 이용하여 훈련데이터와 검증데이터로 각각 70퍼센트와 30퍼센트 비율로 나누어 준다.  
+set.seed(25) 
+intrain_s <- createDataPartition(y = df_s$Churn, p = 0.7, list = FALSE) 
+train_s <- df_s[intrain_s, ]
+test_s <- df_s[-intrain_s, ]
+
+set.seed(25)
+intrain_a <- createDataPartition(y = df_a$Churn, p = 0.7, list = FALSE) 
+train_a <- df_a[intrain_a, ]
+test_a <- df_a[-intrain_a, ]
+
+set.seed(25)
+intrain_p <- createDataPartition(y = df_p$Churn, p = 0.7, list = FALSE) 
+train_p <- df_p[intrain_p, ]
+test_p <- df_p[-intrain_p, ]
+```
+
+#### 예측모델 학습
+```{r}
+# 나이브베이즈 모델을 생성한다.  
+mdl_s <- naiveBayes(Churn ~ ., data = train_s)
+mdl_a <- naiveBayes(Churn ~ ., data = train_a)
+mdl_p <- naiveBayes(Churn ~ ., data = train_p)
+
+```
+
+### 성능평가  
+#### 성능평가 
+```{r}
+# 사전확률과 각 변수에 따른 사후확률을 확인한다.
+mdl_s
+mdl_a
+mdl_p
+
+# 검증데이터에 대한 예측 정확도를 알아본다. 
+pred_s <- predict(mdl_s, test_s)
+confusionMatrix(pred_s, test_s$Churn)
+
+pred_a <- predict(mdl_a, test_a)
+confusionMatrix(pred_a, test_a$Churn)
+
+pred_p <- predict(mdl_p, test_p)
+confusionMatrix(pred_p, test_p$Churn)
+```
+고객계정 관련 정보를 독립변수로 설정했을 때 검증데이터에서 약 76.56%의 예측률로 가장 높은 정확도를 보인다.  
+
+#### 각 독립변수 병합 후 예측모델 생성 및 평가  
+```{r}
+set.seed(25)
+intrain <- createDataPartition(y = df$Churn, p = 0.7, list = FALSE) 
+train <- df[intrain, ]
+test <- df[-intrain, ]
+
+mdl <- naiveBayes(Churn ~ ., data = train)
+
+pred <- predict(mdl, test)
+confusionMatrix(pred, test$Churn)
+```
+이번에는 모든 변수를 합쳐서 모델을 생성했다. 약 72.35%의 예측 정확도를 보여준다. 고객계정 관련 정보를 독립변수로 설정했을 때 다음으로 높은 정확도를 기록했음을 알 수 있다. 
